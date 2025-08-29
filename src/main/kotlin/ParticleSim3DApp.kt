@@ -59,7 +59,11 @@ class ParticleSim3DApp : Application() {
         }
 
 // (Optional) give the sim a tiny upward kick like before
-        simParticles.forEach { it.velocity.z += Random.Default.nextDouble(1.0) }
+        simParticles.forEach {
+        //    it.velocity.x += Random.nextDouble(-1.0,1.0)
+        //    it.velocity.y += Random.nextDouble(-1.0,1.0)
+        //    it.velocity.z += Random.nextDouble(1.0)
+        }
 
 
 
@@ -68,7 +72,7 @@ class ParticleSim3DApp : Application() {
         // Physics
         val physics = PhysicsParams(
             gravity = Vec3(0.0, 0.0, -1.7), // tweak for "balloon-like" descent
-            dragCoeff = 0.35,
+            dragCoeff = 03.5,
             floorZ = 0.0
         )
 

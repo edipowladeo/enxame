@@ -9,28 +9,49 @@ class MorphSimulation(
     fun update(dtSeconds: Double) {
         val dt = dtSeconds.coerceIn(0.0, 1.0 / 30.0) // avoid big steps on frame stalls
         for (agent in agents) {
-            val p = agent.body
-            if (p.state == ParticleState.HALTED) continue
+            val particle = agent.body
 
-            // a = g - c * v
-            val ax = physics.gravity.x - physics.dragCoeff * p.velocity.x
-            val ay = physics.gravity.y - physics.dragCoeff * p.velocity.y
-            val az = physics.gravity.z - physics.dragCoeff * p.velocity.z
+            if (particle.state == ParticleState.HALTED) continue
 
-            p.velocity.x += ax * dt
-            p.velocity.y += ay * dt
-            p.velocity.z += az * dt
+            val goalForce = goalForce(agent)
 
-            p.position.x += p.velocity.x * dt
-            p.position.y += p.velocity.y * dt
-            p.position.z += p.velocity.z * dt
+
+            val ax = goalForce.x  - physics.dragCoeff * particle.velocity.x // + physics.gravity.x
+            val ay = goalForce.y  - physics.dragCoeff * particle.velocity.y // + physics.gravity.y
+            val az = goalForce.z  - physics.dragCoeff * particle.velocity.z // + physics.gravity.z
+
+            particle.velocity.x += ax * dt
+            particle.velocity.y += ay * dt
+            particle.velocity.z += az * dt
+
+            particle.position.x += particle.velocity.x * dt
+            particle.position.y += particle.velocity.y * dt
+            particle.position.z += particle.velocity.z * dt
 
             // Ground collision (Z <= 0): stick & halt
-            if (p.position.z <= physics.floorZ) {
-                p.position.z = physics.floorZ
-                p.velocity = Vec3(0.0, 0.0, 0.0)
-                p.state = ParticleState.HALTED
+            if (particle.position.z <= physics.floorZ) {
+                particle.position.z = physics.floorZ
+                particle.velocity = Vec3(0.0, 0.0, 0.0)
+                particle.state = ParticleState.HALTED
             }
         }
+    }
+
+    fun goalForce(agent: MorphAgent): Vec3 {
+        val toGoal = agent.goalVector()
+        val elasticity = 5.0 // tweak this to change "springiness"
+        val goalForce = Vec3(
+            toGoal.x * elasticity,
+            toGoal.y * elasticity,
+            toGoal.z * elasticitymorph works
+        )
+        val forceAbs = goalForce.length()
+        val maxForce = 5.0 // prevent extreme forces
+        if (forceAbs > maxForce) {
+            goalForce.scaleInPlace(maxForce / forceAbs)
+        }
+        println("goalForce: Before $forceAbs after ${goalForce.length()}")
+        return goalForce
+
     }
 }
