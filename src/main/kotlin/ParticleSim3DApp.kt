@@ -72,12 +72,16 @@ class ParticleSim3DApp : Application() {
             floorZ = 0.0
         )
 
-        val morphAgents = startParticles.mapIndexed { i , it->
+        val morphAgents = simParticles.mapIndexed { i , it->
+            //todo this is a mess, refactor
             val endParticle = endParticles[i]
+            val particle = it
+            val startParticle = startParticles[i]
+
             MorphAgent(
-                body = it,
+                body = particle,
                 plan = MorphPlan(
-                    start = it.position,
+                    start = startParticle.position,
                     end = endParticle.position
                     //  end = it.position.copy().also { it.z += 8 }, // will set later
                     //todo end is a particle?
@@ -85,7 +89,7 @@ class ParticleSim3DApp : Application() {
             )
         }
 
-        val sim = Simulation(simParticles, physics)
+        val sim = MorphSimulation(morphAgents, physics)
 
         // Materials
         val activeMat = PhongMaterial(Color.CORNFLOWERBLUE)

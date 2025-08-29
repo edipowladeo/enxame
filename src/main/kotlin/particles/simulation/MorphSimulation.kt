@@ -2,7 +2,7 @@ import particles.ParticleState
 import particles.morph.MorphAgent
 
 class MorphSimulation(
-    val agents: MutableList<MorphAgent>,
+    val agents: List<MorphAgent>,
     private val physics: PhysicsParams
 ) {
     // Simple explicit Euler with clamped dt
