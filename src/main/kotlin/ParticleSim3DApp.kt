@@ -31,7 +31,7 @@ class ParticleSim3DApp : Application() {
     override fun start(stage: Stage) {
         val worldScale = 20.0           // world meters -> pixels
         val particleRadius = 0.15       // meters
-        val particleCount = 120
+        val particleCount = 40
         val center = Vec3(0.0, 0.0, 0.0)
 
         val startParticles = MutableList(particleCount) { Particle(state = ParticleState.HALTED) }
@@ -76,8 +76,11 @@ class ParticleSim3DApp : Application() {
             floorZ = 0.0
         )
 
+        endParticles.shuffle()
+
         val morphAgents = simParticles.mapIndexed { i , it->
-            //todo this is a mess, refactor
+
+            //todo this is a mess, remofactor
             val endParticle = endParticles[i]
             val particle = it
             val startParticle = startParticles[i]
