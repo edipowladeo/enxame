@@ -16,22 +16,30 @@ import javafx.scene.shape.Box
 import javafx.scene.transform.Rotate
 import javafx.stage.Stage
 import particles.Particle
-import particles.ParticleArranger
+import particles.arranger.ParticleArranger
 import particles.ParticleState
 import particles.ParticleView
+import particles.arranger.STLArranger
 import particles.morph.MorphAgent
 import particles.morph.MorphPlan
 import kotlin.math.sqrt
-import kotlin.random.Random
 
 class ParticleSim3DApp : Application() {
 
-    var autoCenter = true
+    data class State(
+        var autoCenter: Boolean = false,
+        var simulate: Boolean = false,
+        var showStart: Boolean = true,
+        var showEnd: Boolean = true
+    )
+    val state = State(
+
+    )
 
     override fun start(stage: Stage) {
         val worldScale = 20.0           // world meters -> pixels
         val particleRadius = 0.15       // meters
-        val particleCount = 40
+        val particleCount = 1000
         val center = Vec3(0.0, 0.0, 0.0)
 
         val startParticles = MutableList(particleCount) { Particle(state = ParticleState.HALTED) }
@@ -41,13 +49,14 @@ class ParticleSim3DApp : Application() {
 
 
 // Arrange two circles on the ground (same radius, different centers)
-        val startArranger: ParticleArranger = CircleOnGroundArranger(
-            Vec3(0.0, 0.0, 8.0),  // left circle
-            6.0
+        val startArranger: ParticleArranger = STLArranger(
+         "cat.stl",
+            Vec3(0.0,0.0,20.0)
         )
-        val endArranger: ParticleArranger = CircleOnGroundArranger(
-            Vec3(0.0, 0.0, 16.0),  // right circle
-            6.0
+
+        val endArranger: ParticleArranger = STLArranger(
+            "cat.stl",
+            Vec3(0.0,30.0,20.0)
         )
 
         startArranger.arrange(startParticles)
@@ -76,7 +85,7 @@ class ParticleSim3DApp : Application() {
             floorZ = 0.0
         )
 
-        endParticles.shuffle()
+       endParticles.shuffle()
 
         val morphAgents = simParticles.mapIndexed { i , it->
 
@@ -97,6 +106,7 @@ class ParticleSim3DApp : Application() {
         }
 
         val sim = MorphSimulation(morphAgents, physics)
+       // val sim = Simulation(morphAgents.map { it.body }.toMutableList(), physics)
 
         // Materials
         val activeMat = PhongMaterial(Color.CORNFLOWERBLUE)
@@ -177,7 +187,16 @@ class ParticleSim3DApp : Application() {
 // Tecla F: re-enquadra manualmente
         scene.setOnKeyPressed { e ->
             if (e.code == KeyCode.F) {
-                autoCenter = !autoCenter
+                state.autoCenter = !state.autoCenter
+            }
+            if (e.code == KeyCode.S) {
+            state.showStart = !state.showStart
+        }
+            if (e.code == KeyCode.E) {
+            state.showEnd = !state.showEnd
+        }
+            if (e.code == KeyCode.SPACE) {
+                state.simulate = !state.simulate
             }
         }
 
@@ -188,10 +207,10 @@ class ParticleSim3DApp : Application() {
                 val dt = ((now - lastNanos).toDouble() / 1e9).coerceIn(0.0, 1.0 / 15.0)
                 lastNanos = now
 
-                sim.update(dt)
+                if(state.simulate) sim.update(dt)
 
                 //center
-                if (autoCenter) {
+                if (state.autoCenter) {
                     val (c, r) = computeBoundingSphere(particles, worldScale)
                     rig.center(c,r)
                 }
@@ -210,11 +229,13 @@ class ParticleSim3DApp : Application() {
 
 private fun computeBoundingSphere(ps: List<Particle>, scale: Double): Pair<Point3D, Double> {
     if (ps.isEmpty()) return Point3D(0.0, 0.0, 0.0) to 1.0
+
     val pts = ps.map { physicsToView(it.position, scale) }
     val cx = pts.map { it.x }.average()
     val cy = pts.map { it.y }.average()
     val cz = pts.map { it.z }.average()
     val center = Point3D(cx, cy, cz)
+
     var r = 1.0
     for (pt in pts) {
         val dx = pt.x - cx

@@ -2,9 +2,6 @@ package particles.arranger
 
 import Vec3
 import particles.Particle
-import particles.ParticleArranger
-import particles.ParticleCreator
-import particles.ParticleState
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
