@@ -18,6 +18,7 @@ import particles.Particle
 import particles.arranger.ParticleArranger
 import particles.ParticleState
 import particles.ParticleView
+import particles.arranger.GridOnGroundArranger
 import particles.arranger.STLArranger
 import particles.morph.MorphAgent
 import particles.morph.MorphPlan
@@ -57,11 +58,17 @@ class ParticleSim3DApp : Application() {
         )
 
         val startArranger: ParticleArranger = STLArranger(
-            "panther5.stl",
+            "panther.stl",
             0.25,
             Vec3(0.0,0.0,30.0),
             useDebugOffset = true
         )
+
+        /*val startArranger = GridOnGroundArranger(
+            center = Vec3(0.0, 0.0, 30.0),
+            separation = 1.2,
+
+        )*/
 
         startArranger.arrange(startParticles)
         endArranger.arrange(endParticles)

@@ -51,7 +51,7 @@ class MorphSimulation(
             toGoal.z * elasticity
         )
         val forceAbs = goalForce.length()
-        val maxForce = 5.0 // prevent extreme forces
+        val maxForce = 4.0 // prevent extreme forces
         if (forceAbs > maxForce) {
             goalForce.scaleInPlace(maxForce / forceAbs)
         }
@@ -80,7 +80,7 @@ class MorphSimulation(
     fun repulsionForceBetween(
         a: MorphAgent,
         b: MorphAgent,
-        dMax: Double = 0.4,
+        dMax: Double = 0.3,
         strength: Double = 10.0
     ): Vec3 {
         val delta = Vec3(
