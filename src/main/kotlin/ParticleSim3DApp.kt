@@ -57,7 +57,7 @@ class ParticleSim3DApp : Application() {
         )
 
         val startArranger: ParticleArranger = STLArranger(
-            "tiger2.stl",
+            "panther5.stl",
             0.25,
             Vec3(0.0,0.0,30.0),
             useDebugOffset = true

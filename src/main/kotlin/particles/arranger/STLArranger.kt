@@ -11,15 +11,20 @@ class STLArranger(
     private val modelName: String,
     private val scale: Double = 1.0,
     private val offset: Vec3,
-    private val useDebugOffset: Boolean = false
+    private val useDebugOffset: Boolean = false,
+    private val shuffle: Boolean = true
 ) : ParticleArranger {
     override fun arrange(particles: MutableList<Particle>) {
 
 
 
-        val vertices =   StlReader.loadVerticesWithAssimp("/Users/edipo/repo/enxame/build/resources/main/models/"+modelName, deduplicate = true)
+        val vertices =   StlReader.loadVerticesWithAssimp("/Users/edipo/repo/enxame/build/resources/main/models/"+modelName, deduplicate = true).toMutableList()
     println("Read ${vertices.size} unique vertices")
-    vertices.take(particles.size) //todo remover isso
+    //vertices.take(particles.size) //todo remover isso
+        if (shuffle) {
+           vertices.shuffle()
+        }
+
         val centerOfMass = vertices.reduce{acc, v -> acc + v} * (1/ vertices.size.toDouble())
         println("centerOfMass = $centerOfMass")
 
