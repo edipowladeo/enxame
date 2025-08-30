@@ -1,4 +1,3 @@
-import particles.arranger.CircleOnGroundArranger
 import javafx.animation.AnimationTimer
 import javafx.application.Application
 import javafx.geometry.Point3D
@@ -24,41 +23,44 @@ import particles.morph.MorphAgent
 import particles.morph.MorphPlan
 import kotlin.math.sqrt
 
+object State{
+    var autoCenter: Boolean = false
+    var simulate: Boolean = false
+    var showStart: Boolean = true
+    var showEnd: Boolean = true
+    var offset: Vec3 = Vec3(0.0,0.0,0.0)
+}
+
+
+
 class ParticleSim3DApp : Application() {
 
-    data class State(
-        var autoCenter: Boolean = false,
-        var simulate: Boolean = false,
-        var showStart: Boolean = true,
-        var showEnd: Boolean = true
-    )
-    val state = State(
 
-    )
+
 
     override fun start(stage: Stage) {
         val worldScale = 20.0           // world meters -> pixels
         val particleRadius = 0.15       // meters
-        val particleCount = 1000
-        val center = Vec3(0.0, 0.0, 0.0)
+        val particleCount = 1003  //cat.stl tem 1003 vertices
 
         val startParticles = MutableList(particleCount) { Particle(state = ParticleState.HALTED) }
         val endParticles   = MutableList(particleCount) { Particle(state = ParticleState.HALTED) }
         val simParticles   = MutableList(particleCount) { Particle() } // active
-        val particles = startParticles + endParticles + simParticles
+        val particles = simParticles //+ startParticles + endParticles
 
 
 // Arrange two circles on the ground (same radius, different centers)
-        val startArranger: ParticleArranger = STLArranger(
+        val endArranger: ParticleArranger = STLArranger(
          "cat.stl",
             1.5,
-            Vec3(0.0,0.0,20.0)
+            Vec3(0.0,0.0,30.0)
         )
 
-        val endArranger: ParticleArranger = STLArranger(
-            "cat.stl",
-            1.5,
-            Vec3(0.0,30.0,20.0)
+        val startArranger: ParticleArranger = STLArranger(
+            "tiger2.stl",
+            0.25,
+            Vec3(0.0,0.0,30.0),
+            useDebugOffset = true
         )
 
         startArranger.arrange(startParticles)
@@ -189,16 +191,36 @@ class ParticleSim3DApp : Application() {
 // Tecla F: re-enquadra manualmente
         scene.setOnKeyPressed { e ->
             if (e.code == KeyCode.F) {
-                state.autoCenter = !state.autoCenter
+                State.autoCenter = !State.autoCenter
             }
             if (e.code == KeyCode.S) {
-            state.showStart = !state.showStart
+            State.showStart = !State.showStart
         }
             if (e.code == KeyCode.E) {
-            state.showEnd = !state.showEnd
+            State.showEnd = !State.showEnd
         }
             if (e.code == KeyCode.SPACE) {
-                state.simulate = !state.simulate
+                State.simulate = !State.simulate
+            }
+
+            if (e.code == KeyCode.UP) {
+                State.offset.x += 1.0
+                println("offset: ${State.offset.x}, ${State.offset.y}, ${State.offset.z}")
+            }
+            if (e.code == KeyCode.DOWN) {
+                State.offset.x -= 1.0
+
+                println("offset: ${State.offset.x}, ${State.offset.y}, ${State.offset.z}")
+            }
+            if (e.code == KeyCode.LEFT) {
+                  State.offset.y -= 1.0
+                println("offset: ${State.offset.x}, ${State.offset.y}, ${State.offset.z}")
+
+            }
+            if (e.code == KeyCode.RIGHT) {
+                State.offset.y += 1.0
+
+                println("offset: ${State.offset.x}, ${State.offset.y}, ${State.offset.z}")
             }
         }
 
@@ -209,10 +231,10 @@ class ParticleSim3DApp : Application() {
                 val dt = ((now - lastNanos).toDouble() / 1e9).coerceIn(0.0, 1.0 / 15.0)
                 lastNanos = now
 
-                if(state.simulate) sim.update(dt)
+                if(State.simulate) sim.update(dt)
 
                 //center
-                if (state.autoCenter) {
+                if (State.autoCenter) {
                     val (c, r) = computeBoundingSphere(particles, worldScale)
                     rig.center(c,r)
                 }

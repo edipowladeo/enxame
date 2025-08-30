@@ -1,10 +1,6 @@
 package stl
 
 import Vec3
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.file.Files
-import java.nio.file.Path
 import org.lwjgl.assimp.*
 import org.lwjgl.system.MemoryStack
 
@@ -36,18 +32,4 @@ object StlReader {
             return if (deduplicate) verts.distinct() else verts
         }
     }
-}
-
-fun main(args: Array<String>) {
-    val vertices =
-        if (args.isNotEmpty()) {
-            // from disk
-            StlReader.loadVerticesWithAssimp(args[0], deduplicate = true)
-        } else {
-            // from classpath resource bundled in the JAR
-            StlReader.loadVerticesWithAssimp("models/cat.stl", deduplicate = true)
-        }
-
-    println("Read ${vertices.size} unique vertices")
-    vertices.take(10).forEachIndexed { i, v -> println("#$i: (${v.x}, ${v.y}, ${v.z})") }
 }
