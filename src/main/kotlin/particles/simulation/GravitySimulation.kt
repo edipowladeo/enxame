@@ -1,7 +1,7 @@
 import particles.Particle
 import particles.ParticleState
 
-class Simulation(
+class GravitySimulation(
     val particles: MutableList<Particle>,
     private val physics: PhysicsParams
 ) {

@@ -19,7 +19,6 @@ class MorphSimulation(
             val goalForce = goalForce(agent)
             val repulsionForce = repulsionForce(agent, agents)
 
-
             val ax = goalForce.x + repulsionForce.x - physics.dragCoeff * particle.velocity.x // + physics.gravity.x
             val ay = goalForce.y + repulsionForce.y - physics.dragCoeff * particle.velocity.y // + physics.gravity.y
             val az = goalForce.z + repulsionForce.z - physics.dragCoeff * particle.velocity.z // + physics.gravity.z

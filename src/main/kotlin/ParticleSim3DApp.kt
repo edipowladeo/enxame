@@ -15,101 +15,81 @@ import javafx.scene.shape.Box
 import javafx.scene.transform.Rotate
 import javafx.stage.Stage
 import particles.Particle
-import particles.arranger.ParticleArranger
-import particles.ParticleState
 import particles.ParticleView
-import particles.arranger.GridOnGroundArranger
-import particles.arranger.STLArranger
+import particles.arranger.CircleOnGroundFigureCreator
+import particles.arranger.GridOnGroundFigureCreator
+import particles.arranger.STLFigureCreator
 import particles.morph.MorphAgent
 import particles.morph.MorphPlan
 import kotlin.math.sqrt
 
-object State{
-    var autoCenter: Boolean = false
-    var simulate: Boolean = false
-    var showStart: Boolean = true
-    var showEnd: Boolean = true
-    var offset: Vec3 = Vec3(0.0,0.0,0.0)
-}
-
-
-
 class ParticleSim3DApp : Application() {
-
-
-
 
     override fun start(stage: Stage) {
         val worldScale = 20.0           // world meters -> pixels
         val particleRadius = 0.15       // meters
-        val particleCount = 1003  //cat.stl tem 1003 vertices
+        val particleCount = 1000  //cat.stl tem 1003 vertices
 
-        val startParticles = MutableList(particleCount) { Particle(state = ParticleState.HALTED) }
-        val endParticles   = MutableList(particleCount) { Particle(state = ParticleState.HALTED) }
-        val simParticles   = MutableList(particleCount) { Particle() } // active
-        val particles = simParticles //+ startParticles + endParticles
-
-
-// Arrange two circles on the ground (same radius, different centers)
-        val endArranger: ParticleArranger = STLArranger(
-         "cat.stl",
-            1.5,
-            Vec3(0.0,0.0,30.0)
-        )
-
-        val startArranger: ParticleArranger = STLArranger(
+        val pantherFigure = STLFigureCreator(
             "panther.stl",
             0.25,
-            Vec3(0.0,0.0,30.0),
-            useDebugOffset = true
-        )
+            Vec3(0.0, 0.0, 30.0),
+            limit = particleCount,
+        ).create().particles
 
-        /*val startArranger = GridOnGroundArranger(
+        val gridFigure = GridOnGroundFigureCreator(
+            1000,
             center = Vec3(0.0, 0.0, 30.0),
-            separation = 1.2,
+            separation = 1.5,
+        ).create().particles
 
-        )*/
 
-        startArranger.arrange(startParticles)
-        endArranger.arrange(endParticles)
+        val catFigure = STLFigureCreator(
+            "cat.stl",
+            1.5,
+            Vec3(0.0, 0.0, 30.0),
+            limit = particleCount, //todo remove this
+        ).create().particles
+
+        val circleFigure = CircleOnGroundFigureCreator(
+            center = Vec3(0.0, 0.0, 30.0),
+            radius = 15.0,
+            count = particleCount,
+        ).create().particles
+
+        val startFigure = pantherFigure
+        val endFigure = catFigure
+
+        val simParticles = startFigure.map { it.copy() }.toMutableList()
+
+        val particles = simParticles //+ startParticles + endParticles
+
+        val startParticles = startFigure.map { it.copy() }.toMutableList()
+        val endParticles = endFigure.map { it.copy() }.toMutableList()
 
         for (i in 0 until particleCount) {
             simParticles[i].position = startParticles[i].position.copy()
             simParticles[i].velocity = Vec3(0.0, 0.0, 0.0)
         }
 
-// (Optional) give the sim a tiny upward kick like before
-        simParticles.forEach {
-        //    it.velocity.x += Random.nextDouble(-1.0,1.0)
-        //    it.velocity.y += Random.nextDouble(-1.0,1.0)
-        //    it.velocity.z += Random.nextDouble(1.0)
-        }
 
-
-
-
-
-        // Physics
         val physics = PhysicsParams(
             gravity = Vec3(0.0, 0.0, -1.7), // tweak for "balloon-like" descent
-            dragCoeff = 03.5,
-            floorZ = 0.0
+            dragCoeff = 03.5, floorZ = 0.0
         )
 
-       endParticles.shuffle()
+        endParticles.shuffle()
 
-        val morphAgents = simParticles.mapIndexed { i , it->
+        val morphAgents = simParticles.mapIndexed { i, it ->
 
-            //todo this is a mess, remofactor
+            //todo this is a mess, refactor
             val endParticle = endParticles[i]
             val particle = it
             val startParticle = startParticles[i]
 
             MorphAgent(
-                body = particle,
-                plan = MorphPlan(
-                    start = startParticle.position,
-                    end = endParticle.position
+                body = particle, plan = MorphPlan(
+                    start = startParticle.position, end = endParticle.position
                     //  end = it.position.copy().also { it.z += 8 }, // will set later
                     //todo end is a particle?
                 )
@@ -117,7 +97,7 @@ class ParticleSim3DApp : Application() {
         }
 
         val sim = MorphSimulation(morphAgents, physics)
-       // val sim = Simulation(morphAgents.map { it.body }.toMutableList(), physics)
+        // val sim = Simulation(morphAgents.map { it.body }.toMutableList(), physics)
 
         // Materials
         val activeMat = PhongMaterial(Color.CORNFLOWERBLUE)
@@ -198,36 +178,36 @@ class ParticleSim3DApp : Application() {
 // Tecla F: re-enquadra manualmente
         scene.setOnKeyPressed { e ->
             if (e.code == KeyCode.F) {
-                State.autoCenter = !State.autoCenter
+                AppState.autoCenter = !AppState.autoCenter
             }
             if (e.code == KeyCode.S) {
-            State.showStart = !State.showStart
-        }
+                AppState.showStart = !AppState.showStart
+            }
             if (e.code == KeyCode.E) {
-            State.showEnd = !State.showEnd
-        }
+                AppState.showEnd = !AppState.showEnd
+            }
             if (e.code == KeyCode.SPACE) {
-                State.simulate = !State.simulate
+                AppState.simulate = !AppState.simulate
             }
 
             if (e.code == KeyCode.UP) {
-                State.offset.x += 1.0
-                println("offset: ${State.offset.x}, ${State.offset.y}, ${State.offset.z}")
+                AppState.offset.x += 1.0
+                println("offset: ${AppState.offset.x}, ${AppState.offset.y}, ${AppState.offset.z}")
             }
             if (e.code == KeyCode.DOWN) {
-                State.offset.x -= 1.0
+                AppState.offset.x -= 1.0
 
-                println("offset: ${State.offset.x}, ${State.offset.y}, ${State.offset.z}")
+                println("offset: ${AppState.offset.x}, ${AppState.offset.y}, ${AppState.offset.z}")
             }
             if (e.code == KeyCode.LEFT) {
-                  State.offset.y -= 1.0
-                println("offset: ${State.offset.x}, ${State.offset.y}, ${State.offset.z}")
+                AppState.offset.y -= 1.0
+                println("offset: ${AppState.offset.x}, ${AppState.offset.y}, ${AppState.offset.z}")
 
             }
             if (e.code == KeyCode.RIGHT) {
-                State.offset.y += 1.0
+                AppState.offset.y += 1.0
 
-                println("offset: ${State.offset.x}, ${State.offset.y}, ${State.offset.z}")
+                println("offset: ${AppState.offset.x}, ${AppState.offset.y}, ${AppState.offset.z}")
             }
         }
 
@@ -238,12 +218,12 @@ class ParticleSim3DApp : Application() {
                 val dt = ((now - lastNanos).toDouble() / 1e9).coerceIn(0.0, 1.0 / 15.0)
                 lastNanos = now
 
-                if(State.simulate) sim.update(dt)
+                if (AppState.simulate) sim.update(dt)
 
                 //center
-                if (State.autoCenter) {
+                if (AppState.autoCenter) {
                     val (c, r) = computeBoundingSphere(particles, worldScale)
-                    rig.center(c,r)
+                    rig.center(c, r)
                 }
 
                 views.forEach { it.syncToModel() }
@@ -272,7 +252,7 @@ private fun computeBoundingSphere(ps: List<Particle>, scale: Double): Pair<Point
         val dx = pt.x - cx
         val dy = pt.y - cy
         val dz = pt.z - cz
-        val d = sqrt(dx*dx + dy*dy + dz*dz)
+        val d = sqrt(dx * dx + dy * dy + dz * dz)
         if (d > r) r = d
     }
     return center to r
