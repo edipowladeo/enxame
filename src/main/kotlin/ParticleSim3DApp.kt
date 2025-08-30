@@ -65,7 +65,7 @@ class ParticleSim3DApp : Application() {
             count = particleCount,
         ).create().particles
 
-        val startFigure = gridFigure // pantherFigure
+        val startFigure = pantherFigure
         val endFigure = catFigure
 
         val simParticles = startFigure.map { it.copy() }.toMutableList()
@@ -77,10 +77,7 @@ class ParticleSim3DApp : Application() {
 
         val particles = simParticles// + startParticles + endParticles
 
-        for (i in 0 until particleCount) {
-            simParticles[i].position = startParticles[i].position.copy()
-            simParticles[i].velocity = Vec3(0.0, 0.0, 0.0)
-        }
+
 
 
         val physics = PhysicsParams(
@@ -88,23 +85,21 @@ class ParticleSim3DApp : Application() {
             dragCoeff = 03.5, floorZ = 0.0
         )
 
-        endParticles.shuffle()
+        val assign = minimalAssignmentByDistance(startParticles, endParticles)
 
-        val morphAgents = simParticles.mapIndexed { i, it ->
-
-            //todo this is a mess, refactor
-            val endParticle = endParticles[i]
-            val particle = it
-            val startParticle = startParticles[i]
-
+// 2) Build agents using the optimal target for each i
+        val morphAgents = simParticles.mapIndexed { i, body ->
+            val j = assign[i]
             MorphAgent(
-                body = particle, plan = MorphPlan(
-                    start = startParticle.position, end = endParticle.position
-                    //  end = it.position.copy().also { it.z += 8 }, // will set later
-                    //todo end is a particle?
+                body = body,
+                plan = MorphPlan(
+                    start = startParticles[i].position.copy(),
+                    end   = endParticles[j].position.copy()
                 )
             )
         }
+
+
 
         /*val sim = MetallicSimulator(
             agents = morphAgents,
@@ -277,3 +272,89 @@ private fun computeBoundingSphere(ps: List<Particle>, scale: Double): Pair<Point
 
 private fun physicsToView(p: Vec3, scale: Double): Point3D =
     Point3D(p.x * scale, -p.z * scale, p.y * scale) // (X, -Z, Y) conforme seu mapeamento
+
+// --- Minimal total-distance assignment for your existing types ---
+// Pairs A[i] (startParticles[i]) to B[j] (endParticles[j]) minimizing sum of Euclidean distances.
+// Returns assign[i] = j (column chosen for row i).
+fun minimalAssignmentByDistance(
+    A: List<Particle>,  // startParticles
+    B: List<Particle>   // endParticles
+): IntArray {
+    require(A.size == B.size) { "Point sets must have same size." }
+    val n = A.size
+    if (n == 0) return IntArray(0)
+
+    val cost = Array(n) { i ->
+        DoubleArray(n) { j ->
+            val dx = A[i].position.x - B[j].position.x
+            val dy = A[i].position.y - B[j].position.y
+            val dz = A[i].position.z - B[j].position.z
+            dx*dx + dy*dy + dz*dz
+        }
+    }
+    return hungarian(cost)
+}
+
+/**
+ * Hungarian (Kuhn–Munkres) for square cost[n][n], minimization.
+ * Returns assign[i] = j (column matched to row i).
+ */
+fun hungarian(cost: Array<DoubleArray>): IntArray {
+    val n = cost.size
+    require(n > 0 && cost.all { it.size == n }) { "Cost matrix must be square and non-empty." }
+
+    // Potentials and matching (1-indexed internally)
+    val u = DoubleArray(n + 1)
+    val v = DoubleArray(n + 1)
+    val p = IntArray(n + 1)
+    val way = IntArray(n + 1)
+
+    for (i in 1..n) {
+        p[0] = i
+        val minv = DoubleArray(n + 1) { Double.POSITIVE_INFINITY }
+        val used = BooleanArray(n + 1)
+        var j0 = 0
+        do {
+            used[j0] = true
+            val i0 = p[j0]
+            var delta = Double.POSITIVE_INFINITY
+            var j1 = 0
+            for (j in 1..n) {
+                if (!used[j]) {
+                    val cur = cost[i0 - 1][j - 1] - u[i0] - v[j]
+                    if (cur < minv[j]) {
+                        minv[j] = cur
+                        way[j] = j0
+                    }
+                    if (minv[j] < delta) {
+                        delta = minv[j]
+                        j1 = j
+                    }
+                }
+            }
+            for (j in 0..n) {
+                if (used[j]) {
+                    u[p[j]] += delta
+                    v[j] -= delta
+                } else {
+                    minv[j] -= delta
+                }
+            }
+            j0 = j1
+        } while (p[j0] != 0)
+
+        // Augment
+        do {
+            val j1 = way[j0]
+            p[j0] = p[j1]
+            j0 = j1
+        } while (j0 != 0)
+    }
+
+    // Convert to row->col mapping
+    val assign = IntArray(n)
+    for (j in 1..n) {
+        if (p[j] != 0) assign[p[j] - 1] = j - 1
+    }
+    return assign
+}
