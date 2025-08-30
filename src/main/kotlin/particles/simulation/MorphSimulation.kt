@@ -1,7 +1,5 @@
 import particles.ParticleState
 import particles.morph.MorphAgent
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.random.Random
 
 class MorphSimulation(
@@ -41,7 +39,7 @@ class MorphSimulation(
     }
 
     fun goalForce(agent: MorphAgent): Vec3 {
-       // return Vec3(0.0,0.0,0.0)
+        // return Vec3(0.0,0.0,0.0)
         val toGoal = agent.goalVector()
         val elasticity = 5.0 // tweak this to change "springiness"
         val goalForce = Vec3(

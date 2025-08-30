@@ -18,9 +18,11 @@ import particles.Particle
 import particles.ParticleView
 import particles.arranger.CircleOnGroundFigureCreator
 import particles.arranger.GridOnGroundFigureCreator
+import particles.arranger.ParallelogramLatticeFigureCreator
 import particles.arranger.STLFigureCreator
 import particles.morph.MorphAgent
 import particles.morph.MorphPlan
+import particles.simulation.MetallicSimulator
 import kotlin.math.sqrt
 
 class ParticleSim3DApp : Application() {
@@ -38,34 +40,42 @@ class ParticleSim3DApp : Application() {
         ).create().particles
 
         val gridFigure = GridOnGroundFigureCreator(
-            1000,
+            particleCount,
             center = Vec3(0.0, 0.0, 30.0),
             separation = 1.5,
+        ).create().particles
+
+        val latticeFigure = ParallelogramLatticeFigureCreator(
+            count = particleCount,
+            center = Vec3(0.0, 0.0, 30.0),
+            separation = Vec3(1.5, 1.5, 1.5)
         ).create().particles
 
 
         val catFigure = STLFigureCreator(
             "cat.stl",
             1.5,
-            Vec3(0.0, 0.0, 30.0),
+            Vec3(00.0, 0.0, 30.0),
             limit = particleCount, //todo remove this
         ).create().particles
 
         val circleFigure = CircleOnGroundFigureCreator(
-            center = Vec3(0.0, 0.0, 30.0),
+            center = Vec3(0.0, 00.0, 30.0),
             radius = 15.0,
             count = particleCount,
         ).create().particles
 
-        val startFigure = pantherFigure
+        val startFigure = gridFigure // pantherFigure
         val endFigure = catFigure
 
         val simParticles = startFigure.map { it.copy() }.toMutableList()
 
-        val particles = simParticles //+ startParticles + endParticles
+
 
         val startParticles = startFigure.map { it.copy() }.toMutableList()
         val endParticles = endFigure.map { it.copy() }.toMutableList()
+
+        val particles = simParticles// + startParticles + endParticles
 
         for (i in 0 until particleCount) {
             simParticles[i].position = startParticles[i].position.copy()
@@ -96,6 +106,10 @@ class ParticleSim3DApp : Application() {
             )
         }
 
+        /*val sim = MetallicSimulator(
+            agents = morphAgents,
+            physics = PhysicsParams(dragCoeff = 1.0),
+        )*/
         val sim = MorphSimulation(morphAgents, physics)
         // val sim = Simulation(morphAgents.map { it.body }.toMutableList(), physics)
 
@@ -189,6 +203,9 @@ class ParticleSim3DApp : Application() {
             if (e.code == KeyCode.SPACE) {
                 AppState.simulate = !AppState.simulate
             }
+            if (e.code == KeyCode.D) {
+                AppState.drag = !AppState.drag
+            }
 
             if (e.code == KeyCode.UP) {
                 AppState.offset.x += 1.0
@@ -215,10 +232,10 @@ class ParticleSim3DApp : Application() {
         var lastNanos = System.nanoTime()
         object : AnimationTimer() {
             override fun handle(now: Long) {
-                val dt = ((now - lastNanos).toDouble() / 1e9).coerceIn(0.0, 1.0 / 15.0)
+          //      val dt = ((now - lastNanos).toDouble() / 1e9).coerceIn(0.0, 1.0 / 15.0)
                 lastNanos = now
-
-                if (AppState.simulate) sim.update(dt)
+val dt = 1.0 / 60.0
+                if (AppState.simulate) sim.update(dt)//, AppState.drag)
 
                 //center
                 if (AppState.autoCenter) {
