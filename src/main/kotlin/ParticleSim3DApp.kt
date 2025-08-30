@@ -51,11 +51,13 @@ class ParticleSim3DApp : Application() {
 // Arrange two circles on the ground (same radius, different centers)
         val startArranger: ParticleArranger = STLArranger(
          "cat.stl",
+            1.5,
             Vec3(0.0,0.0,20.0)
         )
 
         val endArranger: ParticleArranger = STLArranger(
             "cat.stl",
+            1.5,
             Vec3(0.0,30.0,20.0)
         )
 
